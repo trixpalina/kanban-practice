@@ -1,0 +1,113 @@
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0abab5 0%, #81d8d0 100%);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.login-card {
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-card h1 {
+  text-align: center;
+  margin: 0 0 4px 0;
+  color: #172b4d;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.login-card h2 {
+  text-align: center;
+  margin: 0 0 24px 0;
+  color: #5e6c84;
+  font-weight: 400;
+  font-size: 16px;
+}
+
+.login-card input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #dfe1e6;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font-size: 14px;
+  font-family: inherit;
+  color: #172b4d;
+}
+
+.login-card input:focus {
+  outline: none;
+  border-color: #0abab5;
+  box-shadow: 0 0 0 2px rgba(10, 186, 181, 0.2);
+}
+
+.login-card button[type="submit"] {
+  width: 100%;
+  padding: 12px;
+  background: #0abab5;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: 500;
+  font-family: inherit;
+}
+
+.login-card button[type="submit"]:hover:not(:disabled) {
+  background: #089691;
+}
+
+.login-card button[type="submit"]:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.switch-btn {
+  width: 100%;
+  padding: 10px;
+  margin-top: 12px;
+  background: transparent;
+  color: #0abab5;
+  border: 1px solid #0abab5;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.switch-btn:hover {
+  background: rgba(10, 186, 181, 0.08);
+}
+
+.error {
+  background: #fde8e5;
+  color: #eb5a46;
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.hint {
+  margin-top: 20px;
+  padding: 12px;
+  background: #f4f5f7;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #5e6c84;
+}
+
+.login-page .loading {
+  color: white;
+  font-size: 16px;
+}

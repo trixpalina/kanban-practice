@@ -1,105 +1,108 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, JSON
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy import String, Text, DateTime, ForeignKey, JSON, Integer
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import datetime
 import uuid
+from typing import Optional, List
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
-def generate_uuid():
+def generate_uuid() -> str:
     return str(uuid.uuid4())
 
 class Role(Base):
     __tablename__ = "roles"
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True)  # 'owner', 'writer', 'reader'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(50), unique=True, index=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
 class User(Base):
     __tablename__ = "users"
-    id = Column(String, primary_key=True, default=generate_uuid)
-    username = Column(String, unique=True, index=True)
-    email = Column(String, unique=True, index=True)
-    hashed_password = Column(String)  # БЕЗОПАСНОСТЬ: хэш, а не открытый текст!
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    username: Mapped[str] = mapped_column(String(50), unique=True, index=True)
+    email: Mapped[str] = mapped_column(String(100), unique=True, index=True)
+    hashed_password: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     
-    boards_owned = relationship("Board", back_populates="owner")
-    board_memberships = relationship("BoardMember", back_populates="user")
-    cards_assigned = relationship("Card", back_populates="assignee")
-    comments = relationship("Comment", back_populates="user")
-    history_logs = relationship("CardHistory", back_populates="user")
+    boards_owned: Mapped[List["Board"]] = relationship("Board", back_populates="owner")
+    board_memberships: Mapped[List["BoardMember"]] = relationship("BoardMember", back_populates="user")
+    cards_assigned: Mapped[List["Card"]] = relationship("Card", back_populates="assignee")
+    comments: Mapped[List["Comment"]] = relationship("Comment", back_populates="user")
+    history_logs: Mapped[List["CardHistory"]] = relationship("CardHistory", back_populates="user")
 
 class Board(Base):
     __tablename__ = "boards"
-    id = Column(String, primary_key=True, default=generate_uuid)
-    title = Column(String, index=True)
-    description = Column(Text, nullable=True)
-    meeting_room = Column(String, nullable=True)  # Добавлено для выполнения требования PDF про "комнаты"
-    owner_id = Column(String, ForeignKey("users.id"))
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    title: Mapped[str] = mapped_column(String(100), index=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    meeting_room: Mapped[Optional[str]] = mapped_column(String(100), nullable=True) # Требование из ТЗ
+    owner_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     
-    owner = relationship("User", back_populates="boards_owned")
-    members = relationship("BoardMember", back_populates="board")
-    columns = relationship("Column", back_populates="board", cascade="all, delete-orphan")
+    owner: Mapped["User"] = relationship("User", back_populates="boards_owned")
+    members: Mapped[List["BoardMember"]] = relationship("BoardMember", back_populates="board")
+    columns: Mapped[List["Column"]] = relationship("Column", back_populates="board", cascade="all, delete-orphan")
 
 class BoardMember(Base):
     __tablename__ = "board_members"
-    board_id = Column(String, ForeignKey("boards.id"), primary_key=True)
-    user_id = Column(String, ForeignKey("users.id"), primary_key=True)
-    role_id = Column(Integer, ForeignKey("roles.id"))
+    board_id: Mapped[str] = mapped_column(String(36), ForeignKey("boards.id"), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), primary_key=True)
+    role_id: Mapped[int] = mapped_column(Integer, ForeignKey("roles.id"))
     
-    board = relationship("Board", back_populates="members")
-    user = relationship("User", back_populates="board_memberships")
-    role = relationship("Role")
+    board: Mapped["Board"] = relationship("Board", back_populates="members")
+    user: Mapped["User"] = relationship("User", back_populates="board_memberships")
+    role: Mapped["Role"] = relationship("Role")
 
 class Column(Base):
     __tablename__ = "columns"
-    id = Column(String, primary_key=True, default=generate_uuid)
-    board_id = Column(String, ForeignKey("boards.id"), index=True)
-    title = Column(String)
-    position = Column(Integer)  # Для порядка колонок (drag and drop)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    board_id: Mapped[str] = mapped_column(String(36), ForeignKey("boards.id"), index=True)
+    title: Mapped[str] = mapped_column(String(100))
+    position: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     
-    board = relationship("Board", back_populates="columns")
-    cards = relationship("Card", back_populates="column", cascade="all, delete-orphan")
+    board: Mapped["Board"] = relationship("Board", back_populates="columns")
+    cards: Mapped[List["Card"]] = relationship("Card", back_populates="column", cascade="all, delete-orphan")
 
 class Card(Base):
     __tablename__ = "cards"
-    id = Column(String, primary_key=True, default=generate_uuid)
-    column_id = Column(String, ForeignKey("columns.id"), index=True)
-    assignee_id = Column(String, ForeignKey("users.id"), nullable=True)
-    title = Column(String)
-    description = Column(Text, nullable=True)
-    priority = Column(String, default="medium")  # low, medium, high, critical (ОБЯЗАТЕЛЬНО по PDF!)
-    deadline = Column(DateTime, nullable=True)
-    position = Column(Integer)  # Для порядка карточек в колонке
-    version = Column(Integer, default=1)  # ЗАЩИТА ОТ КОЛЛИЗИЙ (Optimistic Locking)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    column_id: Mapped[str] = mapped_column(String(36), ForeignKey("columns.id"), index=True)
+    assignee_id: Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    title: Mapped[str] = mapped_column(String(150))
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    priority: Mapped[str] = mapped_column(String(20), default="medium") # low, medium, high, critical
+    deadline: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    position: Mapped[int] = mapped_column(Integer)
+    version: Mapped[int] = mapped_column(Integer, default=1) # Защита от коллизий
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    column = relationship("Column", back_populates="cards")
-    assignee = relationship("User", back_populates="cards_assigned")
-    comments = relationship("Comment", back_populates="card", cascade="all, delete-orphan")
-    history = relationship("CardHistory", back_populates="card", cascade="all, delete-orphan")
+    column: Mapped["Column"] = relationship("Column", back_populates="cards")
+    assignee: Mapped[Optional["User"]] = relationship("User", back_populates="cards_assigned")
+    comments: Mapped[List["Comment"]] = relationship("Comment", back_populates="card", cascade="all, delete-orphan")
+    history: Mapped[List["CardHistory"]] = relationship("CardHistory", back_populates="card", cascade="all, delete-orphan")
 
 class Comment(Base):
     __tablename__ = "comments"
-    id = Column(String, primary_key=True, default=generate_uuid)
-    card_id = Column(String, ForeignKey("cards.id"), index=True)
-    user_id = Column(String, ForeignKey("users.id"))
-    content = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    card_id: Mapped[str] = mapped_column(String(36), ForeignKey("cards.id"), index=True)
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
+    content: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     
-    card = relationship("Card", back_populates="comments")
-    user = relationship("User", back_populates="comments")
+    card: Mapped["Card"] = relationship("Card", back_populates="comments")
+    user: Mapped["User"] = relationship("User", back_populates="comments")
 
 class CardHistory(Base):
-    __tablename__ = "card_history"  # ОБЯЗАТЕЛЬНАЯ ТАБЛИЦА ПО КРИТЕРИЯМ ОЦЕНКИ!
-    id = Column(String, primary_key=True, default=generate_uuid)
-    card_id = Column(String, ForeignKey("cards.id"), index=True)
-    user_id = Column(String, ForeignKey("users.id"))
-    action = Column(String)  # 'created', 'moved', 'updated', 'deleted'
-    old_value = Column(JSON, nullable=True)
-    new_value = Column(JSON, nullable=True)
-    changed_at = Column(DateTime, default=datetime.utcnow)
+    __tablename__ = "card_history" # ОБЯЗАТЕЛЬНАЯ ТАБЛИЦА ПО КРИТЕРИЯМ ОЦЕНКИ!
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=generate_uuid)
+    card_id: Mapped[str] = mapped_column(String(36), ForeignKey("cards.id"), index=True)
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"))
+    action: Mapped[str] = mapped_column(String(50))
+    old_value: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    new_value: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    changed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     
-    card = relationship("Card", back_populates="history")
-    user = relationship("User", back_populates="history_logs") 
+    card: Mapped["Card"] = relationship("Card", back_populates="history")
+    user: Mapped["User"] = relationship("User", back_populates="history_logs")
