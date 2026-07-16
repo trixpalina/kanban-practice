@@ -104,11 +104,11 @@ def seed_database():
         db.add(Comment(id=str(uuid.uuid4()), card_id=created_cards[0].id, user_id=created_users[1].id, content="Начинаю верстку сегодня."))
         
         db.commit()
-        print("✅ База данных успешно создана и наполнена тестовыми данными!")
+        print(" База данных успешно создана и наполнена тестовыми данными!")
         
     except Exception as e:
         db.rollback()
-        print(f"❌ Ошибка при наполнении БД: {e}")
+        print(f" Ошибка при наполнении БД: {e}")
     finally:
         db.close()
 
