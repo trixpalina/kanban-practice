@@ -11,7 +11,7 @@ from app.database import engine, SessionLocal
 from app.models import Base, Role, User, Board, BoardMember, Column, Card, Comment, CardHistory
 
 def seed_database():
-    print("📦 Создание таблиц и наполнение тестовыми данными...")
+    print(" Создание таблиц и наполнение тестовыми данными...")
     
     # Создаем все таблицы
     Base.metadata.create_all(bind=engine)
@@ -125,7 +125,7 @@ def seed_database():
         ))
         
         db.commit()
-        print("✅ База данных успешно наполнена!")
+        print(" База данных успешно наполнена!")
         print("\n Тестовые данные:")
         print("  Пользователи:")
         for u in users:
@@ -136,7 +136,7 @@ def seed_database():
         
     except Exception as e:
         db.rollback()
-        print(f"❌ Ошибка: {e}")
+        print(f" Ошибка: {e}")
         raise
     finally:
         db.close()
